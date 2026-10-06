@@ -1,0 +1,5 @@
+   {
+     "CHAT_MODEL": "qwen3:4b-instruct",
+     "OLLAMA_MODELS_DIR": "D:\\Ollama\\models",
+     "KEEP_ALIVE": "-1m"
+   }

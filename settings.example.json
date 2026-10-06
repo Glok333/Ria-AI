@@ -1,0 +1,11 @@
+{
+  "CHAT_MODEL": "qwen3:4b-instruct",
+  "CODE_MODEL": "",
+  "HOTKEY": "ctrl+alt+x",
+  "KEEP_ALIVE": "30m",
+  "PRELOAD_MODEL": true,
+  "SHOW_ACTIONS": true,
+  "DEBUG_LOG": true,
+  "HISTORY_KEEP": 40,
+  "OLLAMA_MODELS_DIR": ""
+}
