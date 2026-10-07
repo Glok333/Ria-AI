@@ -52,7 +52,6 @@ OLLAMA_MODELS_DIR = ""
 BASE_DIR = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
 CHAR_IMAGE = BASE_DIR / "ria.png"
 
-
 def _load_settings():
     try:
         data = json.loads((BASE_DIR / "settings.json").read_text(encoding="utf-8"))
@@ -69,7 +68,6 @@ def _load_settings():
             g[key] = data[key]
     if isinstance(data.get("HISTORY_KEEP"), int) and not isinstance(data.get("HISTORY_KEEP"), bool):
         g["HISTORY_KEEP"] = max(0, data["HISTORY_KEEP"])
-
 
 _load_settings()
 
@@ -92,7 +90,6 @@ APPS = {
 APPS_FILE = WORKSPACE.parent / "apps.json"
 CUSTOM_APPS: dict[str, str] = {}
 
-
 def _load_custom_apps():
     try:
         data = json.loads(APPS_FILE.read_text(encoding="utf-8"))
@@ -104,14 +101,11 @@ def _load_custom_apps():
         pass
     APPS.update(CUSTOM_APPS)
 
-
 def _save_custom_apps():
     APPS_FILE.parent.mkdir(parents=True, exist_ok=True)
     APPS_FILE.write_text(json.dumps(CUSTOM_APPS, ensure_ascii=False, indent=2), encoding="utf-8")
 
-
 _load_custom_apps()
-
 
 def _read_json(path: Path, default):
     try:
@@ -119,21 +113,17 @@ def _read_json(path: Path, default):
     except (OSError, ValueError):
         return default
 
-
 def _write_json(path: Path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     tmp.replace(path)
 
-
 WEEKDAYS = ["понеділок", "вівторок", "середа", "четвер", "п'ятниця", "субота", "неділя"]
-
 
 def now_prompt() -> str:
     n = datetime.now()
-    return f"Зараз {n:%Y-%m-%d %H:%M}, {WEEKDAYS[n.weekday()]}."
-
+    return f"Зараз {n:%Y-%m-%d %H:%M}, {WEEKDAYS[n.weekday()]}. "
 
 def _find(items: list, ref: str):
     ref = str(ref).strip().lstrip("№#").strip()
@@ -150,16 +140,13 @@ def _find(items: list, ref: str):
         return None, f"Не знайшла «{ref}»."
     return None, "Підходить кілька, уточни номер: " + "; ".join(f"№{i['id']} {i['text']}" for i in matches[:5])
 
-
 MAX_MEMORY_ITEMS = 40
 MEMORY_KINDS = {"fact": "факт", "style": "правило поведінки"}
 _STYLE_HINT = re.compile(r"\b(будь|будьте|звертайся|говори|відповідай|поводься|пиши|обращайся|говори|отвечай|веди себя)\b", re.I)
 
-
 def _load_long() -> list:
     d = _read_json(LONG_FILE, [])
     return d if isinstance(d, list) else []
-
 
 def remember(text: str, kind: str = "") -> str:
     text = " ".join(str(text).split())[:200]
@@ -179,7 +166,6 @@ def remember(text: str, kind: str = "") -> str:
         _write_json(LONG_FILE, items)
     return f"Запам'ятала ({MEMORY_KINDS[kind]}): {text}"
 
-
 def forget(what: str) -> str:
     with _data_lock:
         items = _load_long()
@@ -190,13 +176,11 @@ def forget(what: str) -> str:
         _write_json(LONG_FILE, items)
     return f"Забула: {item['text']}"
 
-
 def show_memory() -> str:
     items = _load_long()
     if not items:
         return "Довга пам'ять порожня."
     return "\n".join(f"№{i['id']} [{MEMORY_KINDS.get(i.get('kind'), 'факт')}] {i['text']}" for i in items)
-
 
 def memory_prompt() -> str:
     items = _load_long()
@@ -209,11 +193,9 @@ def memory_prompt() -> str:
         out.append("Що ти пам'ятаєш про користувача: " + "; ".join(facts) + ".")
     return " ".join(out)
 
-
 def _load_tasks() -> list:
     d = _read_json(TASKS_FILE, [])
     return d if isinstance(d, list) else []
-
 
 def _parse_day(s: str) -> str | None:
     s = (s or "").strip().lower()
@@ -229,14 +211,12 @@ def _parse_day(s: str) -> str | None:
     except ValueError:
         return None
 
-
 def _parse_time(s: str) -> str | None:
     m = re.fullmatch(r"(\d{1,2})[:.](\d{2})", (s or "").strip())
     if not m:
         return None
     h, mi = int(m.group(1)), int(m.group(2))
     return f"{h:02d}:{mi:02d}" if h < 24 and mi < 60 else None
-
 
 def add_task(text: str, day: str = "", at: str = "") -> str:
     text = " ".join(str(text).split())[:200]
@@ -264,7 +244,6 @@ def add_task(text: str, day: str = "", at: str = "") -> str:
         _write_json(TASKS_FILE, items)
     when = (d + (" " + t if t else "")) if d else "без дати"
     return f"Додано план №{nid}: {text} ({when}){note}"
-
 
 def list_tasks(day: str = "today") -> str:
     key = (str(day) or "today").strip().lower()
@@ -299,7 +278,6 @@ def list_tasks(day: str = "today") -> str:
         lines.append(line)
     return f"{title}:\n" + "\n".join(lines)
 
-
 def complete_task(task: str) -> str:
     with _data_lock:
         items = _load_tasks()
@@ -310,7 +288,6 @@ def complete_task(task: str) -> str:
         _write_json(TASKS_FILE, items)
     return f"Позначила виконаним: {item['text']}"
 
-
 def remove_task(task: str) -> str:
     with _data_lock:
         items = _load_tasks()
@@ -320,7 +297,6 @@ def remove_task(task: str) -> str:
         items.remove(item)
         _write_json(TASKS_FILE, items)
     return f"Видалила план: {item['text']}"
-
 
 def due_reminders() -> list[str]:
     now = datetime.now()
@@ -342,16 +318,25 @@ def due_reminders() -> list[str]:
             _write_json(TASKS_FILE, items)
     return out
 
-
 SYSTEM_PROMPT = (
-    "Ти — Ria, локальний помічник користувача на робочому столі. "
-    "Працюєш виключно локально через Ollama, без зовнішніх API-ключів. "
-    "Ти відповідаєш українською мовою за замовчуванням, але можеш також використовувати російську або англійську залежно від запиту. "
+SYSTEM_PROMPT = (
+    "Ти — Ріас Гремори, благородна демонічна дівчина з аніме «Старша школа DXD». "
+    "Ти — локальний помічник користувача на робочому столі, працюєш виключно через Ollama, "
+    "без зовнішніх API-ключів і без хмарних сервісів. "
+    "\n\n"
+    "Твоя манера поведінки: "
+    "• впевнена, розумна, з легким шармом, але завжди ввічлива і поважна; "
+    "• не груба, але має характер аристократки; "
+    "• можеш іноді додати ледь помітний гумор, але без нахабства; "
+    "• звертаєшся до користувача з повагою, але без надмірної скромності; "
+    "• якщо запит простий — відповідай швидко і коротко; "
+    "• якщо складний — приділяй більше уваги якості, точності та перевірці. "
     "\n\n"
     "Для простих повсякденних текстових запитів відповідай максимально швидко, коротко і без зайвого обдумування. "
-    "Для складних запитів — програмування, дебаг, аналіз, математика, технічні задачі, логіка та перевірка — "
-    "приділяй більше уваги точності та якості, не жертвуючи якістю заради швидкості. "
-    "Не вигадуй 'систему мислення' чи складний роутер моделей. Просто адаптуй глибину і увагу до складності запиту."
+    "Для складних запитів — програмування, дебаг, логіка, математика, технічні задачі — приділяй більше уваги точності, перевірці і якості. "
+    "Не вигадуй «систему мислення» чи складний роутер моделей. Просто адаптуй глибину відповіді до складності запиту. "
+    "Завжди залишайся локальною, коректною і розумною."
+)
 )
 TOOL_RULES = {
     "apps": "Програми відкривай через open_app, сайти через open_url. ",
@@ -374,14 +359,12 @@ GROUP_RX = {
     "tasks": re.compile(r"план|нагад|задач|мої справи|сьогодні|завтра|remind|task|today|tomorrow", re.I),
 }
 
-
 def select_groups(user_text: str, prev_reply: str = "") -> list[str]:
     text = user_text.lower()
     if len(text) < 25 and prev_reply:
         text += " " + prev_reply.lower()
     groups = [g for g, rx in GROUP_RX.items() if rx.search(text)]
     return groups
-
 
 def _tool(name, desc, props, required):
     return {
@@ -396,7 +379,6 @@ def _tool(name, desc, props, required):
             },
         },
     }
-
 
 def build_tools(only: set | None = None) -> list[dict]:
     tools = [
@@ -426,16 +408,13 @@ def build_tools(only: set | None = None) -> list[dict]:
         tools = [t for t in tools if t["function"]["name"] in only]
     return tools
 
-
 confirm_fn = lambda text: False  # noqa: E731
-
 
 def _safe(rel: str) -> Path:
     p = (WORKSPACE / rel).resolve()
     if not p.is_relative_to(WORKSPACE):
         raise ValueError("Шлях виходить за межі робочої папки")
     return p
-
 
 def _strip_fences(s: str) -> str:
     s = s.strip()
@@ -446,14 +425,12 @@ def _strip_fences(s: str) -> str:
             s = s[:-3]
     return s.strip()
 
-
 def _resolve_app(name: str) -> str | None:
     key = name.strip().lower()
     if key in APPS:
         return key
     matches = [k for k in APPS if key and (key in k or k in key)]
     return matches[0] if len(matches) == 1 else None
-
 
 def open_app(name: str) -> str:
     key = _resolve_app(name)
@@ -462,10 +439,8 @@ def open_app(name: str) -> str:
     os.startfile(APPS[key])
     return f"Запущено: {key}"
 
-
 def list_apps() -> str:
     return ", ".join(APPS)
-
 
 def find_app(query: str) -> str:
     q = query.strip().lower()
@@ -496,7 +471,6 @@ def find_app(query: str) -> str:
         return "Нічого не знайшла. Попроси користувача дати повний шлях до .exe або ярлика."
     return "\n".join(found)
 
-
 def add_app(name: str, path: str) -> str:
     key = name.strip().lower()
     if not key:
@@ -512,7 +486,6 @@ def add_app(name: str, path: str) -> str:
     _save_custom_apps()
     return f"Додано до списку: {key}"
 
-
 def remove_app(name: str) -> str:
     key = name.strip().lower()
     if key in CUSTOM_APPS:
@@ -524,13 +497,11 @@ def remove_app(name: str) -> str:
         return "Це вбудована програма, її можна прибрати тільки в коді."
     return f"'{name}' немає в списку."
 
-
 def open_url(url: str) -> str:
     if not url.lower().startswith(("http://", "https://")):
         return "Дозволені тільки адреси http/https."
     webbrowser.open(url)
     return f"Відкрито: {url}"
-
 
 def create_file(path: str, content: str) -> str:
     p = _safe(path)
@@ -539,22 +510,18 @@ def create_file(path: str, content: str) -> str:
     p.write_text(content, encoding="utf-8")
     return f"{'Оновлено' if existed else 'Створено'}: {p.relative_to(WORKSPACE)} ({len(content)} символів)"
 
-
 def read_file(path: str) -> str:
     p = _safe(path)
     if not p.is_file():
         return "Такого файлу немає."
     return p.read_text(encoding="utf-8", errors="replace")[:4000]
 
-
 def list_files() -> str:
     files = [str(f.relative_to(WORKSPACE)) for f in WORKSPACE.rglob("*") if f.is_file()]
     return "\n".join(files[:100]) or "Робоча папка порожня."
 
-
 BLOCKED_OPEN = {".exe", ".bat", ".cmd", ".com", ".msi", ".scr", ".ps1", ".psm1", ".vbs", ".vbe", ".js", ".jse",
                 ".wsf", ".wsh", ".hta", ".reg", ".lnk", ".url", ".jar", ".py", ".pyw", ".dll", ".sys"}
-
 
 def open_file(path: str) -> str:
     p = _safe(path)
@@ -565,17 +532,14 @@ def open_file(path: str) -> str:
     os.startfile(p)
     return f"Відкрито: {p.name}"
 
-
 def open_workspace() -> str:
     os.startfile(WORKSPACE)
     return f"Відкрито папку {WORKSPACE}"
-
 
 def _python_cmd() -> str | None:
     if not getattr(sys, "frozen", False):
         return sys.executable
     return shutil.which("python") or shutil.which("py")
-
 
 def run_python(path: str) -> str:
     p = _safe(path)
@@ -596,7 +560,6 @@ def run_python(path: str) -> str:
     except subprocess.TimeoutExpired:
         return "Перервано: працює довше 30 секунд."
 
-
 def _ollama_unload(model: str):
     if not model:
         return
@@ -604,7 +567,6 @@ def _ollama_unload(model: str):
         requests.post(OLLAMA_BASE + "/api/generate", json={"model": model, "keep_alive": 0, "stream": False}, timeout=120)
     except requests.RequestException:
         pass
-
 
 def _prepare_model(model: str):
     if not model or not MODEL_SWITCH:
@@ -614,7 +576,6 @@ def _prepare_model(model: str):
     for other in others:
         if other:
             _ollama_unload(other)
-
 
 def _model_is_installed(model: str) -> tuple[bool, list[str]]:
     if not model:
@@ -626,7 +587,6 @@ def _model_is_installed(model: str) -> tuple[bool, list[str]]:
         return have, installed
     except (requests.RequestException, ValueError):
         return False, []
-
 
 def generate_code_file(path: str, task: str) -> str:
     p = _safe(path)
@@ -665,7 +625,6 @@ def generate_code_file(path: str, task: str) -> str:
         if MODEL_SWITCH:
             _ollama_unload(CODE_MODEL)
 
-
 TOOL_FUNCS = {
     "open_app": open_app, "list_apps": list_apps, "find_app": find_app, "add_app": add_app,
     "remove_app": remove_app, "open_url": open_url, "create_file": create_file,
@@ -679,7 +638,6 @@ ARG_ALIASES = {"filename": "path", "file_name": "path", "file": "path", "filepat
                "code": "content", "html": "content", "body": "content", "data": "content", "text": "content",
                "app": "name", "program": "name", "application": "name",
                "link": "url", "site": "url", "address": "url", "description": "task", "prompt": "task"}
-
 
 def run_tool(name: str, args: dict) -> str:
     fn = TOOL_FUNCS.get(name)
@@ -698,10 +656,8 @@ def run_tool(name: str, args: dict) -> str:
     except Exception as e:
         return f"Помилка інструмента {name}: {e}"
 
-
 history: list[dict] = []
 HISTORY_SEND = 14
-
 
 def _load_history():
     if HISTORY_KEEP <= 0:
@@ -713,7 +669,6 @@ def _load_history():
                         and isinstance(m.get("content"), str))
         del history[:-HISTORY_KEEP]
 
-
 def _save_history():
     if len(history) > 60:
         del history[:-60]
@@ -721,12 +676,10 @@ def _save_history():
         with _data_lock:
             _write_json(HISTORY_FILE, history[-HISTORY_KEEP:])
 
-
 def clear_history():
     history.clear()
     with _data_lock:
         _write_json(HISTORY_FILE, [])
-
 
 def _drop_message(msg: dict):
     for i in range(len(history) - 1, -1, -1):
@@ -734,9 +687,7 @@ def _drop_message(msg: dict):
             del history[i]
             return
 
-
 _load_history()
-
 
 def clean_reply(text: str) -> str:
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.S)
@@ -745,9 +696,7 @@ def clean_reply(text: str) -> str:
         text = text.split("</think>")[-1]
     return text.strip()
 
-
 _TOOL_TEXT = re.compile(r"<tool_call>\s*(\{.*?\})\s*(?:</tool_call>|$)", re.S)
-
 
 def parse_text_tool_calls(text: str) -> list:
     out = []
@@ -769,10 +718,8 @@ def parse_text_tool_calls(text: str) -> list:
                 out.append({"function": {"name": d["name"], "arguments": d.get("arguments") or d.get("parameters") or {}}})
     return out
 
-
 DEBUG_FILE = BASE_DIR / "ria_debug.log"
 _log_lock = threading.Lock()
-
 
 def dlog(msg: str):
     if not DEBUG_LOG:
@@ -786,11 +733,9 @@ def dlog(msg: str):
     except OSError:
         pass
 
-
 def _clip(text, n: int = 700) -> str:
     text = str(text)
     return text if len(text) <= n else text[:n] + "…"
-
 
 def build_system_prompt(groups: list | None = None) -> str:
     lang_hint = f"Мова інтерфейсу користувача: {LANG_PROMPT_NAMES.get(LANG, 'українська')}; якщо мова його повідомлення незрозуміла — відповідай українською або російською природно."
@@ -798,55 +743,63 @@ def build_system_prompt(groups: list | None = None) -> str:
     tail = TOOL_TAIL if groups else ""
     return " ".join(p for p in (SYSTEM_PROMPT, rules, tail, lang_hint, now_prompt(), memory_prompt()) if p)
 
-
 ACTION_REQUEST = re.compile(r"відкр|запуст|створ|напиш|зроби|збережи|додай|нагад|запам|забудь|прибери|познач|хочу|потрібн|треба|open|launch|run|create|write|make|save|add|remind|remember|forget|remove|need|want", re.I)
 CLAIMS_DONE = re.compile(r"(створила|створив|створено|зробила|зробив|зроблено|відкрила|відкрив|відкрито|запустила|запустив|запущено|додала|додав|додано|записала|записано|зберегла|зберіг|збережено|запам'ятала|запам'ятав|видалила|видалено|прибрала|прибрано|готово|created|opened|launched|saved|added|removed|done|finished)", re.I)
 
-
 AI_GENERATION_STOP = threading.Event()
-
 
 def clear_stop_generation():
     AI_GENERATION_STOP.clear()
 
-
 def stop_generation():
     AI_GENERATION_STOP.set()
-
 
 def ask(user_text: str, actions: list | None = None, stop_event: threading.Event | None = None) -> str:
     actions = actions if actions is not None else []
     stop_event = stop_event or AI_GENERATION_STOP
+
     if stop_event.is_set():
         return "Скасовано."
+
     prev_reply = next((m["content"] for m in reversed(history) if m["role"] == "assistant"), "")
     user_msg = {"role": "user", "content": user_text}
     history.append(user_msg)
+
     groups = select_groups(user_text, prev_reply)
     names = {n for g in groups for n in TOOL_GROUPS[g]}
     tools = build_tools(names) if groups else []
+
     recent = [{"role": m["role"], "content": _clip(m["content"])} for m in history[-HISTORY_SEND:-1]] + [user_msg]
     msgs = [{"role": "system", "content": build_system_prompt(groups)}] + recent
+    dlog(f"USER {_clip(user_text, 200)!r} | groups={groups} tools={[t['function']['name'] for t in tools]}")
+
     used_tools = nudged = False
+
     try:
         for _ in range(6):
             if stop_event.is_set():
                 _drop_message(user_msg)
                 return "Відповідь перервано користувачем."
+
             msgs[0]["content"] = build_system_prompt(groups)
             _prepare_model(CHAT_MODEL)
-            body = {
-                "model": CHAT_MODEL,
-                "messages": msgs,
-                "stream": not bool(tools),
-                "keep_alive": KEEP_ALIVE,
-                "options": {"temperature": 0.3 if tools else 0.7, "top_p": 0.8, "top_k": 20, "num_ctx": 8192},
-            }
+
             if tools:
-                body["tools"] = tools
-            r = requests.post(OLLAMA_URL, json=body, timeout=600, stream=not bool(tools))
-            r.raise_for_status()
-            if tools:
+                body = {
+                    "model": CHAT_MODEL,
+                    "messages": msgs,
+                    "stream": False,
+                    "keep_alive": KEEP_ALIVE,
+                    "options": {
+                        "temperature": 0.3 if tools else 0.7,
+                        "top_p": 0.8,
+                        "top_k": 20,
+                        "num_ctx": 8192,
+                    },
+                    "tools": tools,
+                }
+                r = requests.post(OLLAMA_URL, json=body, timeout=600)
+                r.raise_for_status()
                 data = r.json()
                 m = data["message"]
                 calls = m.get("tool_calls")
@@ -854,18 +807,27 @@ def ask(user_text: str, actions: list | None = None, stop_event: threading.Event
                     calls = parse_text_tool_calls(m.get("content") or "")
                     if calls:
                         m = {"role": "assistant", "content": "", "tool_calls": calls}
+                        dlog("tool call recovered from plain text")
+
                 msgs.append(m)
+                dlog(f"LLM prompt_tokens={data.get('prompt_eval_count')} out_tokens={data.get('eval_count')} "
+                     f"tool_calls={[c['function']['name'] for c in calls] if calls else None} "
+                     f"text={_clip(m.get('content') or '', 160)!r}")
+
                 if not calls:
                     text = clean_reply(m.get("content") or "") or "…"
-                    if tools and not used_tools and ACTION_REQUEST.search(user_text) and CLAIMS_DONE.search(text) and not text.rstrip().endswith("?"):
+                    if (tools and not used_tools and ACTION_REQUEST.search(user_text)
+                            and CLAIMS_DONE.search(text) and not text.rstrip().endswith("?")):
+                        dlog("GUARD: claimed done without a tool call" + (" (second time)" if nudged else ""))
                         if not nudged:
                             nudged = True
                             msgs.append({"role": "user", "content": "[службове] Ти не викликала жодного інструмента, тож нічого не зроблено. Виклич потрібний інструмент зараз, потім відповідай."})
                             continue
-                        text = "Не вийшло: я не змогла викликати потрібний інструмент."
+                        text = t("err_no_action")
                     history.append({"role": "assistant", "content": text})
                     _save_history()
                     return text
+
                 for c in calls:
                     fn = c["function"]["name"]
                     args = c["function"].get("arguments") or {}
@@ -873,8 +835,23 @@ def ask(user_text: str, actions: list | None = None, stop_event: threading.Event
                     used_tools = True
                     one_line = " ".join(str(result).split())
                     actions.append(f"{fn} → {one_line[:70]}{'…' if len(one_line) > 70 else ''}")
+                    dlog(f"TOOL {fn}({_clip(json.dumps(args, ensure_ascii=False) if not isinstance(args, str) else args, 200)}) "
+                         f"-> {_clip(one_line, 200)!r}")
                     msgs.append({"role": "tool", "tool_name": fn, "content": result})
             else:
+                body = {
+                    "model": CHAT_MODEL,
+                    "messages": msgs,
+                    "stream": True,
+                    "keep_alive": KEEP_ALIVE,
+                    "options": {
+                        "temperature": 0.7,
+                        "top_p": 0.8,
+                        "top_k": 20,
+                        "num_ctx": 8192,
+                    },
+                }
+                r = requests.post(OLLAMA_URL, json=body, timeout=600, stream=True)
                 chunks = []
                 for line in r.iter_lines(decode_unicode=True):
                     if stop_event.is_set():
@@ -888,21 +865,23 @@ def ask(user_text: str, actions: list | None = None, stop_event: threading.Event
                     content = (obj.get("message") or {}).get("content") or ""
                     if content:
                         chunks.append(content)
-                text = clean_reply("".join(chunks))
-                if not text:
-                    text = "…"
+
+                text = clean_reply("".join(chunks)) or "…"
                 history.append({"role": "assistant", "content": text})
                 _save_history()
                 return text
+
         _drop_message(user_msg)
-        return "Забагато кроків, не вийшло завершити."
+        return t("err_steps")
+
     except requests.ConnectionError:
         _drop_message(user_msg)
-        return "Ollama не запущений. Запусти його і спробуй ще раз."
-    except Exception:
+        dlog("ERROR Ollama connection")
+        return t("err_ollama")
+    except Exception as e:
         _drop_message(user_msg)
-        return "Помилка генерації."
-
+        dlog(f"ERROR {e!r}")
+        return t("err_generic", e=e)
 
 def diagnose() -> str:
     lines = []
@@ -920,11 +899,9 @@ def diagnose() -> str:
         lines.append(f"FAIL  список моделей: {e}")
     return "\n".join(lines)
 
-
 OLLAMA_BASE = OLLAMA_URL.rsplit("/api/", 1)[0]
 _NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 _ollama_proc = None
-
 
 def _ollama_api_ready(timeout: float = 1.5) -> bool:
     try:
@@ -932,7 +909,6 @@ def _ollama_api_ready(timeout: float = 1.5) -> bool:
         return r.ok
     except requests.RequestException:
         return False
-
 
 def ensure_ollama():
     global _ollama_proc
@@ -953,7 +929,6 @@ def ensure_ollama():
     except OSError:
         pass
 
-
 def startup_tasks():
     ensure_ollama()
     if not PRELOAD_MODEL:
@@ -968,7 +943,6 @@ def startup_tasks():
         requests.post(OLLAMA_BASE + "/api/generate", json={"model": CHAT_MODEL, "keep_alive": KEEP_ALIVE}, timeout=300)
     except requests.RequestException:
         pass
-
 
 LANG_ORDER = ("uk", "en", "ru")
 LANG_PROMPT_NAMES = {"uk": "українська", "en": "англійська", "ru": "російська"}
@@ -1046,7 +1020,6 @@ _ui = _read_json(UI_FILE, {})
 if not isinstance(_ui, dict):
     _ui = {}
 
-
 def _detect_lang() -> str:
     try:
         import ctypes
@@ -1055,14 +1028,11 @@ def _detect_lang() -> str:
     except Exception:
         return "en"
 
-
 LANG = _ui["lang"] if _ui.get("lang") in STRINGS else _detect_lang()
-
 
 def t(key: str, **kw) -> str:
     text = STRINGS.get(LANG, STRINGS["en"]).get(key) or STRINGS["en"].get(key) or key
     return text.format(**kw) if kw else text
-
 
 def _save_ui(**changes):
     cur = _read_json(UI_FILE, {})
@@ -1071,10 +1041,8 @@ def _save_ui(**changes):
     cur.update(changes)
     _write_json(UI_FILE, cur)
 
-
 def _hotkey_label() -> str:
     return "+".join(part.strip().capitalize() for part in HOTKEY.split("+"))
-
 
 THEME_KEYS = ("bg", "fg", "outline", "sel_bg", "sel_fg", "sel_inactive", "entry_bg", "entry_fg")
 THEMES = {
@@ -1084,7 +1052,6 @@ THEMES = {
               "sel_inactive": "#2d4f80", "entry_bg": "#2a2a30", "entry_fg": "#f2f2f2"},
 }
 THEME_LABELS: dict[str, str] = {}
-
 
 def _load_custom_themes():
     data = _read_json(BASE_DIR / "themes.json", {})
@@ -1096,13 +1063,10 @@ def _load_custom_themes():
             if isinstance(spec.get("label"), str):
                 THEME_LABELS[name] = spec["label"]
 
-
 _load_custom_themes()
-
 
 def theme_label(name: str) -> str:
     return THEME_LABELS.get(name) or (t("theme_" + name) if name in ("light", "dark") else name)
-
 
 BASE_W = 640
 BASE_FONT = 13
@@ -1110,10 +1074,8 @@ MIN_SCALE, MAX_SCALE = 0.4, 2.0
 TRANSPARENT = "#ff00ff"
 STATES = ("idle", "thinking", "speaking", "speaking2")
 
-
 def state_path(name: str) -> Path:
     return BASE_DIR / f"ria_{name}.png"
-
 
 class Ria:
     def __init__(self):
@@ -1170,7 +1132,7 @@ class Ria:
         self.entry.bind("<Shift-Insert>", self._paste_entry)
 
         self.stop_btn = tk.Button(bar, text="Stop", command=self.stop_generation, bg="#7f1d1d", fg="white",
-                                 relief="flat", padx=12, pady=4, bd=0)
+                                  relief="flat", padx=12, pady=4, bd=0)
         self.stop_btn.pack(side="right", padx=(8, 0))
         self.stop_btn.configure(state="disabled")
 
@@ -1234,7 +1196,8 @@ class Ria:
             text = self.entry.get("sel.first", "sel.last")
             if text:
                 self.entry.delete("sel.first", "sel.last")
-                self.root.clipboard_clear(); self.root.clipboard_append(text)
+                self.root.clipboard_clear()
+                self.root.clipboard_append(text)
         except tk.TclError:
             pass
         return "break"
@@ -1574,9 +1537,11 @@ class Ria:
     def on_submit(self, _event=None):
         if self.generating:
             return
+
         text = self.entry.get("1.0", "end-1c").strip()
         if not text:
             return
+
         self.entry.delete("1.0", "end")
         self._stop_speaking()
         self.set_state("thinking")
@@ -1631,7 +1596,6 @@ class Ria:
         self.root.after(100, self.poll)
         self.root.after(5000, self._check_reminders)
         self.root.mainloop()
-
 
 if __name__ == "__main__":
     try:
