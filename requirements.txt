@@ -1,0 +1,6 @@
+requests
+keyboard
+pillow
+faster-whisper
+sounddevice
+numpy
